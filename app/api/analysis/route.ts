@@ -6,16 +6,15 @@ async function getVideoAnalyses(): Promise<VideoAnalysis[]> {
   return [
     {
       video_id: '1',
-      file_path: '/videos/1.mp4',
-      uploaded_at: '2023-06-01T10:00:00Z',
-      status: 'completed',
-      detection_id: 'det1',
       vehicle_id: 'veh1',
-      lot_id: 'lot1',
       is_electric_only: false,
       timestamp: '2023-06-01T10:05:00Z',
-      plate_number: 'ABC123',
       vehicle_type: 'sedan',
+      uploaded_at: '2023-06-01T10:00:00Z',
+      // 옵셔널 필드들
+      status: 'completed',
+      lot_id: 'lot1',
+      plate_number: 'ABC123',
       parking_status: 'parked',
     },
     // Add more mock data as needed
