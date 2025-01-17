@@ -36,7 +36,7 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
@@ -45,9 +45,11 @@ export default function LoginPage() {
         throw error
       }
 
-      toast.success('로그인되었습니다!')
-      router.push('/dashboard')
-      router.refresh()
+      if (data.user) {
+        toast.success('로그인되었습니다!')
+        router.push('/dashboard')
+        router.refresh()
+      }
     } catch (error: any) {
       toast.error(error.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.')
       console.error('Error logging in:', error)
