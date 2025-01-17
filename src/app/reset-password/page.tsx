@@ -51,7 +51,7 @@ export default function ResetPasswordPage() {
       if (error) throw error
 
       toast.success('비밀번호가 성공적으로 변경되었습니다.')
-      router.push('/auth/login')
+      router.push('/login')
     } catch (error: any) {
       toast.error(error.message || '비밀번호 변경에 실패했습니다.')
       console.error('Error resetting password:', error)

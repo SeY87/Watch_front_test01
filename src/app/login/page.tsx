@@ -64,7 +64,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/callback`
         }
       })
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`,
       })
 
       if (error) throw error
@@ -99,7 +99,7 @@ export default function LoginPage() {
   }
 
   const handleSignUpClick = () => {
-    router.push('/auth/signup')
+    router.push('/signup')
   }
 
   return (

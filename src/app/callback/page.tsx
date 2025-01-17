@@ -18,7 +18,7 @@ export default function AuthCallbackPage() {
       
       if (error) {
         console.error('Error during auth callback:', error)
-        router.push('/auth/login?error=callback_error')
+        router.push('/login?error=callback_error')
         return
       }
 

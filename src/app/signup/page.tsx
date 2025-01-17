@@ -42,7 +42,7 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/callback`,
         },
       })
 
@@ -50,7 +50,7 @@ export default function SignUpPage() {
         throw error
       }
 
-      router.push('/auth/verify-email')
+      router.push('/verify-email')
     } catch (error) {
       toast.error('회원가입에 실패했습니다. 다시 시도해주세요.')
       console.error('Error signing up:', error)
@@ -60,7 +60,7 @@ export default function SignUpPage() {
   }
 
   const handleLoginClick = () => {
-    router.push('/auth/login')
+    router.push('/login')
   }
 
   return (

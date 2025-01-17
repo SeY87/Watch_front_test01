@@ -16,7 +16,7 @@ export default function VerifyEmailPage() {
   const router = useRouter()
 
   const handleLoginClick = () => {
-    router.push('/auth/login')
+    router.push('/login')
   }
 
   return (
