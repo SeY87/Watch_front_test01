@@ -2,39 +2,31 @@
 
 import { useEffect, useState } from 'react'
 import { Bell } from 'lucide-react'
-import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-
-interface Notification {
-  id: string
-  message: string
-  created_at: string
-  read: boolean
-}
+import { useSupabase } from '@/hooks/useSupabase'
+import { useAuth } from '@/hooks/useAuth'
+import { Notification } from '@/types'
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = useSupabase()
+  const { user } = useAuth()
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
+    if (!user) return
 
+    const fetchNotifications = async () => {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5)
 
@@ -49,7 +41,6 @@ export function NotificationBell() {
 
     fetchNotifications()
 
-    // 실시간 업데이트 구독
     const channel = supabase
       .channel('notifications')
       .on(
@@ -58,6 +49,7 @@ export function NotificationBell() {
           event: '*',
           schema: 'public',
           table: 'notifications',
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           fetchNotifications()
@@ -68,13 +60,16 @@ export function NotificationBell() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [supabase, user])
 
   const markAsRead = async (notificationId: string) => {
+    if (!user) return
+
     const { error } = await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', notificationId)
+      .eq('user_id', user.id)
 
     if (error) {
       console.error('Error marking notification as read:', error)
@@ -120,7 +115,7 @@ export function NotificationBell() {
                   key={notification.id}
                   className={`p-2 rounded-lg text-sm ${
                     notification.read ? 'bg-muted/50' : 'bg-muted'
-                  }`}
+                  } cursor-pointer hover:bg-muted/80 transition-colors`}
                   onClick={() => markAsRead(notification.id)}
                 >
                   <p>{notification.message}</p>

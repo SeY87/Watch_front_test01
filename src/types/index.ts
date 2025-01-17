@@ -1,3 +1,5 @@
+import { User } from '@supabase/supabase-js'
+
 export interface VideoAnalysis {
   detection_id: string;
   video_id: string;
@@ -30,5 +32,28 @@ export interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+}
+
+export interface Notification {
+  id: string
+  user_id: string
+  message: string
+  created_at: string
+  read: boolean
+}
+
+export interface NavigationItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+export interface AuthContextType {
+  isAuthenticated: boolean
+  user: User | null
+}
+
+export interface LayoutProps {
+  children: React.ReactNode
 }
 
