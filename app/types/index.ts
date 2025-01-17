@@ -7,7 +7,7 @@ export type VideoAnalysis = {
   timestamp: string;
   vehicle_type: string;
   uploaded_at: string;
-  status?: string;
+  status: string;
   lot_id?: string;
   plate_number?: string;
   parking_status?: string;
