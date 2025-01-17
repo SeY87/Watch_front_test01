@@ -3,15 +3,37 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Navigation } from './Navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { createBrowserClient } from '@supabase/ssr'
 import { Button } from "@/components/ui/button"
+import { useEffect, useState } from 'react'
 
 export function Header() {
-  const { isAuthenticated, logout } = useAuth()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
-  const handleLogout = () => {
-    logout()
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsAuthenticated(!!session)
+    }
+
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     router.push('/')
   }
 

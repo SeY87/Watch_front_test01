@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { BarChart3, Upload, LineChart, Calculator, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { NotificationBell } from '@/components/NotificationBell'
 import { UserMenu } from '@/components/UserMenu'
 import { ModeToggle } from '@/components/ModeToggle'
@@ -47,7 +47,10 @@ interface NavbarProps {
 export function Navbar({ children }: NavbarProps) {
   const pathname = usePathname()
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
