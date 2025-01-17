@@ -66,18 +66,20 @@ export function VideoAnalysisTable() {
       setIsRefreshing(true)
       const data = await getAllVideoAnalyses()
       
-      const formattedData = data.map((item) => {
-        return {
-          detection_id: item.detection_id,
-          video_id: item.video_id,
-          vehicle_id: item.vehicle_id,
-          vehicle_type: item.vehicle_type,
-          is_electric_only: item.is_electric_only,
-          timestamp: new Date(item.timestamp).toLocaleString('ko-KR'),
-          uploaded_at: new Date(item.uploaded_at).toLocaleString('ko-KR'),
-          created_at: item.created_at
-        }
-      })
+      const formattedData: VideoAnalysis[] = data.map((item) => ({
+        detection_id: item.detection_id,
+        video_id: item.video_id,
+        vehicle_id: item.vehicle_id,
+        vehicle_type: item.vehicle_type,
+        is_electric_only: item.is_electric_only,
+        timestamp: new Date(item.timestamp).toLocaleString('ko-KR'),
+        uploaded_at: new Date(item.uploaded_at).toLocaleString('ko-KR'),
+        created_at: item.created_at,
+        status: item.status,
+        lot_id: item.lot_id,
+        plate_number: item.plate_number,
+        parking_status: item.parking_status
+      }))
       
       setAnalyses(formattedData)
       setFilteredAnalyses(formattedData)

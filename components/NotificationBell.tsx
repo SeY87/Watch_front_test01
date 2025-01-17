@@ -1,49 +1,66 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Bell } from 'lucide-react'
+import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { format } from 'date-fns'
-import { ko } from 'date-fns/locale'
 
 interface Notification {
   id: string
-  title: string
   message: string
-  type: 'video' | 'fine' | 'system'
-  read: boolean
   created_at: string
+  read: boolean
 }
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
-  const supabase = createClientComponentClient()
+  const [isOpen, setIsOpen] = useState(false)
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
+    const fetchNotifications = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (error) {
+        console.error('Error fetching notifications:', error)
+        return
+      }
+
+      setNotifications(data)
+      setUnreadCount(data.filter(n => !n.read).length)
+    }
+
     fetchNotifications()
-    // 실시간 알림 구독
+
+    // 실시간 업데이트 구독
     const channel = supabase
       .channel('notifications')
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
-          table: 'notifications'
+          table: 'notifications',
         },
-        (payload) => {
-          const newNotification = payload.new as Notification
-          setNotifications(prev => [newNotification, ...prev])
-          if (!newNotification.read) {
-            setUnreadCount(prev => prev + 1)
-          }
+        () => {
+          fetchNotifications()
         }
       )
       .subscribe()
@@ -53,102 +70,66 @@ export function NotificationBell() {
     }
   }, [supabase])
 
-  const fetchNotifications = async () => {
-    try {
-      const { data: notifications, error } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10)
+  const markAsRead = async (notificationId: string) => {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', notificationId)
 
-      if (error) throw error
-
-      if (notifications) {
-        setNotifications(notifications)
-        setUnreadCount(notifications.filter(n => !n.read).length)
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
-  }
-
-  const markAsRead = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read: true })
-        .eq('id', id)
-
-      if (error) throw error
-
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, read: true } : n))
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch (error) {
+    if (error) {
       console.error('Error marking notification as read:', error)
+      return
     }
-  }
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'video':
-        return '🎥'
-      case 'fine':
-        return '💰'
-      default:
-        return '🔔'
-    }
+    setNotifications(prev =>
+      prev.map(n =>
+        n.id === notificationId ? { ...n, read: true } : n
+      )
+    )
+    setUnreadCount(prev => Math.max(0, prev - 1))
   }
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="알림"
+        >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
+            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
               {unreadCount}
             </span>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-4 border-b">
+        <div className="p-4">
           <h4 className="font-semibold">알림</h4>
-        </div>
-        <div className="max-h-96 overflow-auto">
           {notifications.length === 0 ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              알림이 없습니다.
-            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              새로운 알림이 없습니다.
+            </p>
           ) : (
-            notifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-4 border-b last:border-0 cursor-pointer hover:bg-muted/50 ${
-                  !notification.read ? 'bg-muted/20' : ''
-                }`}
-                onClick={() => markAsRead(notification.id)}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-lg">
-                    {getNotificationIcon(notification.type)}
-                  </span>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{notification.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {format(new Date(notification.created_at), 'PPP p', {
-                        locale: ko,
-                      })}
-                    </p>
-                  </div>
+            <div className="mt-2 space-y-2">
+              {notifications.map(notification => (
+                <div
+                  key={notification.id}
+                  className={`p-2 rounded-lg text-sm ${
+                    notification.read ? 'bg-muted/50' : 'bg-muted'
+                  }`}
+                  onClick={() => markAsRead(notification.id)}
+                >
+                  <p>{notification.message}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {new Date(notification.created_at).toLocaleString()}
+                  </p>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       </PopoverContent>

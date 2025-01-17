@@ -5,19 +5,33 @@ import { VideoAnalysis } from '@/types'
 async function getVideoAnalyses(): Promise<VideoAnalysis[]> {
   return [
     {
+      detection_id: 'det1',
       video_id: '1',
       vehicle_id: 'veh1',
       is_electric_only: false,
-      timestamp: '2023-06-01T10:05:00Z',
-      vehicle_type: 'sedan',
-      uploaded_at: '2023-06-01T10:00:00Z',
-      // 옵셔널 필드들
-      status: 'completed',
+      timestamp: new Date().toISOString(),
+      vehicle_type: '승용차',
+      uploaded_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: 'COMPLETED',
       lot_id: 'lot1',
-      plate_number: 'ABC123',
-      parking_status: 'parked',
+      plate_number: '12가3456',
+      parking_status: 'PARKED'
     },
-    // Add more mock data as needed
+    {
+      detection_id: 'det2',
+      video_id: '2',
+      vehicle_id: 'veh2',
+      is_electric_only: true,
+      timestamp: new Date().toISOString(),
+      vehicle_type: '화물차',
+      uploaded_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: 'PENDING',
+      lot_id: 'lot2',
+      plate_number: '34나5678',
+      parking_status: 'MOVING'
+    }
   ]
 }
 

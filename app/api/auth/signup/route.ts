@@ -1,73 +1,51 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const requestData = await request.json()
-    const { email, password, name, phone, organization } = requestData
+    const cookieStore = cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: any) {
+            cookieStore.delete({ name, ...options })
+          },
+        },
+      }
+    )
 
-    const supabase = createRouteHandlerClient({ cookies })
+    const { email, password } = await request.json()
 
-    // 1. Supabase Auth로 회원가입
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: {
-          name,
-          phone,
-          organization,
-        },
+        emailRedirectTo: `${request.headers.get('origin')}/auth/callback`,
       },
     })
 
-    if (authError) {
+    if (error) {
       return NextResponse.json(
-        { error: authError.message },
+        { error: error.message },
         { status: 400 }
       )
     }
 
-    if (!authData.user) {
-      return NextResponse.json(
-        { error: '회원가입에 실패했습니다.' },
-        { status: 400 }
-      )
-    }
-
-    // 2. users 테이블에 사용자 정보 저장
-    const { error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: authData.user.id,
-          email,
-          name,
-          phone,
-          organization,
-          role: 'user',
-          status: 'active',
-        },
-      ])
-      .select()
-      .single()
-
-    if (userError) {
-      // users 테이블 저장 실패 시 Auth 사용자 삭제
-      await supabase.auth.admin.deleteUser(authData.user.id)
-      return NextResponse.json(
-        { error: userError.message },
-        { status: 400 }
-      )
-    }
-
-    return NextResponse.json({
-      message: '회원가입이 완료되었습니다. 이메일을 확인해주세요.',
-      user: authData.user,
-    })
-  } catch (error: any) {
-    console.error('Signup error:', error)
+    return NextResponse.json(
+      { message: '회원가입이 완료되었습니다. 이메일을 확인해주세요.' },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error in signup:', error)
     return NextResponse.json(
       { error: '회원가입 중 오류가 발생했습니다.' },
       { status: 500 }

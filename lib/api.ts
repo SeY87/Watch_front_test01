@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { TablesRow, TablesInsert } from '@/app/types/supabase'
 import { PostgrestError } from '@supabase/supabase-js'
+import { VideoAnalysis } from '@/types'
 
 // 재시도 로직을 위한 유틸리티 함수
 async function withRetry<T>(
@@ -156,23 +157,27 @@ export async function updateProfile(id: string, profile: Partial<TablesRow<'prof
   }
 }
 
-// Video Analysis API
-export async function getAllVideoAnalyses() {
-  try {
-    const { data, error } = await supabase
-      .from('video_analyses')
-      .select('*')
-      .order('created_at', { ascending: false })
+interface VideoAnalysisResponse {
+  detection_id: string
+  video_id: string
+  vehicle_id: string
+  vehicle_type: string
+  is_electric_only: boolean
+  timestamp: string
+  uploaded_at: string
+  created_at: string
+  status: string
+  lot_id?: string
+  plate_number?: string
+  parking_status?: string
+}
 
-    if (error) {
-      throw new APIError('비디오 분석 조회 실패', error, { operation: 'getAllVideoAnalyses' })
-    }
-
-    return data as TablesRow<'video_analyses'>[]
-  } catch (error) {
-    if (error instanceof APIError) throw error
-    throw new APIError('비디오 분석 조회 중 예상치 못한 에러 발생', error)
+export async function getAllVideoAnalyses(): Promise<VideoAnalysisResponse[]> {
+  const response = await fetch('/api/analysis')
+  if (!response.ok) {
+    throw new Error('Failed to fetch video analyses')
   }
+  return response.json()
 }
 
 export async function createVideoAnalysis(analysis: TablesInsert<'video_analyses'>) {

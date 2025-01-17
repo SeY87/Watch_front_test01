@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -17,13 +17,15 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 
 export default function SignUpPage() {
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,10 +42,6 @@ export default function SignUpPage() {
         email,
         password,
         options: {
-          data: {
-            name,
-            role: '일반 사용자',
-          },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       })
@@ -52,7 +50,6 @@ export default function SignUpPage() {
         throw error
       }
 
-      toast.success('회원가입이 완료되었습니다. 이메일을 확인해주세요.')
       router.push('/auth/verify-email')
     } catch (error) {
       toast.error('회원가입에 실패했습니다. 다시 시도해주세요.')
@@ -78,17 +75,6 @@ export default function SignUpPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">이름</Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="홍길동"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="email">이메일</Label>
               <Input
                 id="email"
@@ -110,9 +96,9 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">비밀번호 확인</Label>
+              <Label htmlFor="confirmPassword">비밀번호 확인</Label>
               <Input
-                id="confirm-password"
+                id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -126,7 +112,7 @@ export default function SignUpPage() {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading ? '가입 중...' : '가입하기'}
+              {isLoading ? '회원가입 중...' : '회원가입'}
             </Button>
             <Button
               type="button"
@@ -134,7 +120,7 @@ export default function SignUpPage() {
               className="w-full"
               onClick={handleLoginClick}
             >
-              로그인으로 돌아가기
+              이미 계정이 있으신가요? 로그인하기
             </Button>
           </CardFooter>
         </form>
